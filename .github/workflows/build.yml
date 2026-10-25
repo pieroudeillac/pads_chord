@@ -66,6 +66,7 @@ jobs:
       - name: Publier la release « latest »
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }} # pas de dépôt git dans dist/ : on l'indique explicitement
         run: |
           cd dist
           zip -qr "PadsAccords-Windows.zip" "PadsAccords-Windows"
@@ -92,6 +93,7 @@ jobs:
       - name: Publier la version numérotée
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }} # pas de dépôt git dans dist/ : on l'indique explicitement
         run: |
           cd dist
           zip -qr "PadsAccords-Windows.zip" "PadsAccords-Windows"
