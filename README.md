@@ -54,7 +54,7 @@ Live only knows an **instrument** plugin that produces MIDI. So it goes **track 
 - **Save**: name the displayed progression — it is saved inside the Live project and reappears in the **Progression** menu, after the built-in presets. **Delete** only works on a saved progression.
 - **MIDI reset**: instantly silences everything (note-offs + All Notes Off on every channel) and resets the plugin's MIDI state — handy if the synth ends up holding stuck notes.
 
-**Computer keyboard:** click inside the plugin window first so it gets keyboard focus, then the keys drive the pads bottom-up: `Z X C V` (pads 1–4), `A S D F` (5–8), `Q W E R` (9–12), and the number row `1 2 3 4` (13–16). A letter always means the label printed on your key (AZERTY *or* QWERTY); on AZERTY the number row also accepts the unshifted characters `& é " '`. Hold a key to sustain the chord, release to stop.
+**Computer keyboard:** click inside the plugin window first so it gets keyboard focus. The keys are laid out like on your keyboard, bottom-up: `W X C V` (pads 1–4, bottom row), `Q S D F` (5–8), `A Z E R` (9–12), and `1 2 3 4` (top pads 13–16) — from the number row **or the numeric keypad**. Letters always mean the label printed on your key (AZERTY *or* QWERTY — the same letters exist on both); on AZERTY, the number row also accepts the unshifted characters `& é " '`. Hold a key to sustain the chord, release to stop.
 
 ## Build from source
 

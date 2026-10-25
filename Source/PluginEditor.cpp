@@ -4,9 +4,12 @@ namespace
 {
 juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 
-// Clavier de l'ordinateur : 16 touches = 16 pads, du bas vers le haut.
-// Les caractères correspondent aux touches telles qu'étiquetées (AZERTY ou QWERTY) :
-// Z X C V -> pads 1–4, A S D F -> 5–8, Q W E R -> 9–12, rangée des chiffres -> 13–16.
+// Clavier de l'ordinateur : 16 touches = 16 pads, géométrie identique au clavier
+// (AZERTY ; les mêmes lettres existent aussi sur QWERTY, à un autre emplacement) :
+//   W X C V -> pads 1–4 (rangée du bas)
+//   Q S D F -> pads 5–8
+//   A Z E R -> pads 9–12
+//   chiffres 1 2 3 4 -> pads 13–16 (rangée principale ET pavé numérique)
 // Sur AZERTY la rangée des chiffres donne &, é, ", ' sans Maj : on accepte aussi ces caractères.
 int padForCharacter (int c)
 {
@@ -14,16 +17,16 @@ int padForCharacter (int c)
         c = c - 'A' + 'a';
     switch (c)
     {
-        case 'z': return 0;
+        case 'w': return 0;
         case 'x': return 1;
         case 'c': return 2;
         case 'v': return 3;
-        case 'a': return 4;
+        case 'q': return 4;
         case 's': return 5;
         case 'd': return 6;
         case 'f': return 7;
-        case 'q': return 8;
-        case 'w': return 9;
+        case 'a': return 8;
+        case 'z': return 9;
         case 'e': return 10;
         case 'r': return 11;
         case '1': case '&': return 12;
@@ -38,28 +41,35 @@ int padForKeyCode (int code)
 {
     switch (code)
     {
-        case 'z': case 'Z': return 0;
+        case 'w': case 'W': return 0;
         case 'x': case 'X': return 1;
         case 'c': case 'C': return 2;
         case 'v': case 'V': return 3;
-        case 'a': case 'A': return 4;
+        case 'q': case 'Q': return 4;
         case 's': case 'S': return 5;
         case 'd': case 'D': return 6;
         case 'f': case 'F': return 7;
-        case 'q': case 'Q': return 8;
-        case 'w': case 'W': return 9;
+        case 'a': case 'A': return 8;
+        case 'z': case 'Z': return 9;
         case 'e': case 'E': return 10;
         case 'r': case 'R': return 11;
         case '1': return 12;
         case '2': return 13;
         case '3': return 14;
         case '4': return 15;
-        default: return -1;
+        default: break;
     }
+    // Pavé numérique : les constantes JUCE (VK | modificateur étendu) ne sont pas
+    // utilisables comme étiquettes de switch, on compare à l'exécution.
+    if (code == juce::KeyPress::numberPad1) return 12;
+    if (code == juce::KeyPress::numberPad2) return 13;
+    if (code == juce::KeyPress::numberPad3) return 14;
+    if (code == juce::KeyPress::numberPad4) return 15;
+    return -1;
 }
 
-const char* const padKeys[16]      = { "z", "x", "c", "v", "a", "s", "d", "f",
-                                       "q", "w", "e", "r", "1", "2", "3", "4" };
+const char* const padKeys[16]      = { "w", "x", "c", "v", "q", "s", "d", "f",
+                                       "a", "z", "e", "r", "1", "2", "3", "4" };
 const char* const padKeysAlt[4]    = { "&", "é", "\"", "'" };
 
 // La touche équivalente est-elle actuellement enfoncée ?
@@ -78,6 +88,9 @@ bool isPadKeyCurrentlyDown (int pad)
         // '1' à '4' (le code ASCII est le code de touche sur Windows) ou leur caractère AZERTY
         if (juce::KeyPress::isKeyCurrentlyDown ((int) (unsigned char) padKeys[pad][0])
             || downChar (juce::String::fromUTF8 (padKeysAlt[pad - 12])))
+            return true;
+        // pavé numérique 1 à 4 (« numpad N » est la description portable de JUCE)
+        if (downChar (juce::String ("numpad ") + (pad - 11)))
             return true;
     }
     return false;

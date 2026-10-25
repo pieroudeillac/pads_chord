@@ -54,7 +54,7 @@ Live ne connaît pas les plug-ins VST « effet MIDI » : le plugin se présente 
 - **Enregistrer** : nommez la progression affichée — elle est sauvegardée dans le projet Live et réapparaît dans le menu **Progression**, à la suite des préréglages d'usine. **Supprimer** n'agit que sur une progression enregistrée.
 - **RàZ MIDI** : coupe immédiatement tout ce qui sonne (note-off et *All Notes Off* sur chaque canal) et remet à zéro le MIDI du plugin — utile si le synthé garde des notes bloquées.
 
-**Clavier de l'ordinateur :** cliquez d'abord dans la fenêtre du plugin pour qu'elle ait le focus, puis les touches pilotent les pads du bas vers le haut : `Z X C V` (pads 1–4), `A S D F` (pads 5–8), `Q W E R` (9–12) et la rangée des chiffres `1 2 3 4` (pads 13–16). Une lettre correspond à l'étiquette affichée sur la touche (AZERTY ou QWERTY) ; sur AZERTY, la rangée des chiffres sans Maj (`& é " '`) fonctionne aussi. Maintenez la touche pour tenir l'accord.
+**Clavier de l'ordinateur :** cliquez d'abord dans la fenêtre du plugin pour qu'elle ait le focus. Les touches reproduisent la géométrie du clavier, du bas vers le haut : `W X C V` (pads 1–4, rangée du bas), `Q S D F` (5–8), `A Z E R` (9–12), et `1 2 3 4` (pads 13–16 du haut) — depuis la rangée des chiffres **ou le pavé numérique**. Une lettre correspond à l'étiquette affichée sur la touche (AZERTY ou QWERTY — les mêmes lettres existent sur les deux) ; sur AZERTY, la rangée des chiffres sans Maj (`& é " '`) fonctionne aussi. Maintenez la touche pour tenir l'accord.
 
 ## Compiler depuis les sources
 
