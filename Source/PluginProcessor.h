@@ -47,6 +47,14 @@ public:
     std::vector<int> getDegrees() const;
     void setDegrees (const std::vector<int>& pads); // numéros de pads, 1 à 16, 8 maximum
 
+    // Progressions enregistrées par l'utilisateur : des enfants UserProg dans l'état du plugin,
+    // donc sauvegardées dans le projet Live via getStateInformation.
+    struct UserProg { juce::String name; std::vector<int> degs; };
+
+    std::vector<UserProg> getUserProgs() const;
+    void saveUserProg (const juce::String& name, const std::vector<int>& degs); // renomme ou crée
+    void deleteUserProg (const juce::String& name);
+
     pads::Settings getSettings() const;
     pads::VoiceOptions getVoiceOptions() const;
 

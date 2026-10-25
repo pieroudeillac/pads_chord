@@ -32,6 +32,12 @@ Les pads se jouent à la souris. Les notes MIDI 36 à 51 (do1 à ré♯2) décle
 
 **Suivre le transport :** coche « Suivre le transport de l'hôte » et la progression choisie se joue en boucle, un accord toutes les 2 temps, 1 mesure ou 2 mesures, calée sur la position de Live. Pour la capturer, arme la piste B et enregistre.
 
+## Composer et enregistrer une progression
+
+- Coche **Composer** : chaque pad cliqué ajoute alors un accord à la progression (8 accords au maximum, il s'entend toujours en même temps). **Annuler** retire le dernier pas, **Effacer** repart de zéro.
+- Le menu **Progression** affiche « Composée » pendant la composition. Décoche **Composer** : la progression continue de sonner avec « Suivre le transport de l'hôte ».
+- **Enregistrer** ouvre une boîte pour nommer la progression affichée : elle est sauvegardée dans le projet Live (comme tout l'état du plugin) et réapparaît ensuite dans le menu **Progression**, à la suite des préréglages d'usine. **Supprimer** n'est actif que sur une progression enregistrée.
+
 ## Développer
 
 - `Source/ChordEngine.*` : théorie musicale, sans dépendance. `tests/engine_test.cpp` vérifie des cas précis, et `tests/engine_dump.cpp` avec `tests/engine_dump.js` comparent les 324 combinaisons tonalité, mode et type d'accords au prototype web (les deux sorties sont identiques).

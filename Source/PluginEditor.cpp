@@ -29,7 +29,7 @@ juce::Colour kindColour (pads::Kind k)
 class PadsEditor::PadButton final : public juce::Component
 {
 public:
-    PadButton (PadsProcessor& p, int i) : proc (p), index (i) { setMouseCursor (juce::MouseCursor::PointingHandCursor); }
+    PadButton (PadsEditor& e, int i) : ed (e), proc (e.proc), index (i) { setMouseCursor (juce::MouseCursor::PointingHandCursor); }
 
     void set (const pads::Pad& pad, const juce::String& steps)
     {
@@ -93,10 +93,11 @@ public:
         }
     }
 
-    void mouseDown (const juce::MouseEvent&) override { proc.setPadHeld (index, true); }
+    void mouseDown (const juce::MouseEvent&) override { proc.setPadHeld (index, true); if (ed.composing) ed.appendStep (index + 1); }
     void mouseUp (const juce::MouseEvent&) override { proc.setPadHeld (index, false); }
 
 private:
+    PadsEditor& ed;
     PadsProcessor& proc;
     int index;
     juce::Colour colour { juce::Colours::grey };
@@ -109,7 +110,7 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
 {
     for (int i = 0; i < 16; ++i)
     {
-        padButtons.push_back (std::make_unique<PadButton> (proc, i));
+        padButtons.push_back (std::make_unique<PadButton> (*this, i));
         addAndMakeVisible (*padButtons.back());
     }
 
@@ -120,7 +121,7 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
         l.setFont (juce::FontOptions (12.5f));
         addAndMakeVisible (l);
     };
-    setupLabel (lKey, "Tonalité");
+    setupLabel (lKey, juce::String::fromUTF8 ("Tonalité"));
     setupLabel (lMode, "Mode");
     setupLabel (lType, "Accords");
     setupLabel (lVoicing, "Voicing");
@@ -157,9 +158,15 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
 
     tBass.setButtonText ("Ajouter la basse");
     tFollow.setButtonText (juce::String::fromUTF8 ("Suivre le transport de l'hôte"));
+    tCompose.setButtonText (juce::String::fromUTF8 ("Composer"));
     addAndMakeVisible (tBass);
     addAndMakeVisible (tFollow);
+    addAndMakeVisible (tCompose);
+    addAndMakeVisible (bUndo);
+    addAndMakeVisible (bClear);
     addAndMakeVisible (bGenerate);
+    addAndMakeVisible (bSave);
+    addAndMakeVisible (bDelete);
 
     aKey = std::make_unique<CA> (proc.apvts, "key", cKey);
     aMode = std::make_unique<CA> (proc.apvts, "mode", cMode);
@@ -177,14 +184,57 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
         const int id = cProg.getSelectedId();
         if (id == 100)
             proc.setDegrees (generated);
+        else if (id >= 300 && id < 300 + (int) userProgs.size())
+            proc.setDegrees (userProgs[(size_t) (id - 300)].degs);
         else if (id >= 1 && id <= (int) progs.size())
             proc.setDegrees (progs[(size_t) id - 1].degs);
+        updateButtons();
         refreshSteps();
     };
     bGenerate.onClick = [this]
     {
+        composed.clear();
         generated = pads::randomProgression (rng);
         proc.setDegrees (generated);
+        refreshProgBox();
+        refreshSteps();
+    };
+    tCompose.onClick = [this]
+    {
+        composing = tCompose.getToggleState();
+        if (composing)
+        {
+            composed.clear();
+            proc.setDegrees ({});
+            refreshProgBox();
+        }
+        refreshSteps();
+    };
+    bUndo.onClick = [this]
+    {
+        auto degs = proc.getDegrees();
+        if (degs.empty())
+            return;
+        degs.pop_back();
+        composed = degs;
+        proc.setDegrees (degs);
+        refreshProgBox();
+        refreshSteps();
+    };
+    bClear.onClick = [this]
+    {
+        composed.clear();
+        proc.setDegrees ({});
+        refreshProgBox();
+        refreshSteps();
+    };
+    bSave.onClick = [this] { openSaveDialog(); };
+    bDelete.onClick = [this]
+    {
+        const int id = cProg.getSelectedId();
+        if (id < 300 || id >= 300 + (int) userProgs.size())
+            return;
+        proc.deleteUserProg (userProgs[(size_t) (id - 300)].name);
         refreshProgBox();
         refreshSteps();
     };
@@ -235,6 +285,8 @@ void PadsEditor::relayout()
 
 void PadsEditor::refreshProgBox()
 {
+    userProgs = proc.getUserProgs();
+
     cProg.clear (juce::dontSendNotification);
     for (size_t i = 0; i < progs.size(); ++i)
     {
@@ -243,12 +295,22 @@ void PadsEditor::refreshProgBox()
             chords << (chords.isEmpty() ? "" : "  ") << u8 (layout.pads[(size_t) d - 1].name);
         cProg.addItem (u8 (progs[i].name) + "  ·  " + chords, (int) i + 1);
     }
+    for (size_t i = 0; i < userProgs.size(); ++i)
+    {
+        juce::String chords;
+        for (int d : userProgs[i].degs)
+            chords << (chords.isEmpty() ? "" : "  ") << u8 (layout.pads[(size_t) d - 1].name);
+        cProg.addItem (userProgs[i].name + "  ·  " + chords, 300 + (int) i);
+    }
 
     const auto current = proc.getDegrees();
     int sel = 0;
-    for (size_t i = 0; i < progs.size(); ++i)
+    for (size_t i = 0; i < progs.size() && sel == 0; ++i)
         if (progs[i].degs == current)
             sel = (int) i + 1;
+    for (size_t i = 0; i < userProgs.size() && sel == 0; ++i)
+        if (userProgs[i].degs == current)
+            sel = 300 + (int) i;
 
     if (sel == 0 && ! generated.empty() && generated == current)
     {
@@ -258,8 +320,67 @@ void PadsEditor::refreshProgBox()
         cProg.addItem (juce::String::fromUTF8 ("Générée  ·  ") + chords, 100);
         sel = 100;
     }
+    if (sel == 0 && ! composed.empty() && composed == current)
+    {
+        juce::String chords;
+        for (int d : composed)
+            chords << (chords.isEmpty() ? "" : "  ") << u8 (layout.pads[(size_t) d - 1].name);
+        cProg.addItem (juce::String::fromUTF8 ("Composée  ·  ") + chords, 200);
+        sel = 200;
+    }
     if (sel != 0)
         cProg.setSelectedId (sel, juce::dontSendNotification);
+
+    updateButtons();
+}
+
+void PadsEditor::updateButtons()
+{
+    const int id = cProg.getSelectedId();
+    bDelete.setEnabled (id >= 300 && id < 300 + (int) userProgs.size());
+    bUndo.setEnabled (composing);
+    bClear.setEnabled (composing);
+}
+
+void PadsEditor::openSaveDialog()
+{
+    const auto current = proc.getDegrees();
+    if (current.empty() || saveWindow != nullptr)
+        return;
+
+    juce::StringArray taken;
+    for (const auto& up : userProgs)
+        taken.add (up.name);
+    int n = 1;
+    while (taken.contains (juce::String::fromUTF8 ("Ma progression ") + juce::String (n)))
+        ++n;
+
+    saveWindow = std::make_unique<juce::AlertWindow> (juce::String::fromUTF8 ("Enregistrer la progression"),
+                                                      juce::String::fromUTF8 ("Nom de la progression :"),
+                                                      juce::MessageBoxIconType::NoIcon, this);
+    saveWindow->addTextEditor ("name", juce::String::fromUTF8 ("Ma progression ") + juce::String (n), juce::String::fromUTF8 ("Nom"), true);
+    saveWindow->addButton ("OK", 1, juce::KeyPress (juce::KeyPress::returnKey));
+    saveWindow->addButton (juce::String::fromUTF8 ("Annuler"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    saveWindow->enterModalState (true, juce::ModalCallbackFunction::create ([safe = juce::Component::SafePointer<PadsEditor> (this)] (int result)
+    {
+        if (auto* e = safe.getComponent()) // l'éditeur peut être fermé pendant le dialogue
+            e->finishSaveDialog (result);
+    }), false);
+}
+
+void PadsEditor::finishSaveDialog (int result)
+{
+    if (auto w = std::move (saveWindow))
+        if (result == 1 && ! proc.getDegrees().empty())
+        {
+            const auto name = w->getTextEditorContents ("name").trim();
+            if (name.isNotEmpty())
+            {
+                proc.saveUserProg (name, proc.getDegrees());
+                refreshProgBox();
+                refreshSteps();
+            }
+        }
 }
 
 void PadsEditor::refreshSteps()
@@ -393,5 +514,18 @@ void PadsEditor::resized()
     lProg.setBounds (area.removeFromTop (20));
     cProg.setBounds (area.removeFromTop (rowH));
     area.removeFromTop (6);
-    bGenerate.setBounds (area.removeFromTop (rowH).removeFromLeft (120));
+    const int w3 = (area.getWidth() - 12) / 3;
+    auto row3 = area.removeFromTop (rowH);
+    tCompose.setBounds (row3.removeFromLeft (w3));
+    row3.removeFromLeft (6);
+    bUndo.setBounds (row3.removeFromLeft (w3));
+    row3.removeFromLeft (6);
+    bClear.setBounds (row3);
+    area.removeFromTop (6);
+    row3 = area.removeFromTop (rowH);
+    bSave.setBounds (row3.removeFromLeft (w3));
+    row3.removeFromLeft (6);
+    bDelete.setBounds (row3.removeFromLeft (w3));
+    row3.removeFromLeft (6);
+    bGenerate.setBounds (row3);
 }

@@ -18,7 +18,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PadsProcessor::createLayout(
     for (auto* k : pads::kKeyLabels) keys.add (u8 (k));
     for (auto& m : pads::kModes) modes.add (u8 (m.name));
 
-    l.add (std::make_unique<AudioParameterChoice> (ParameterID { "key", 1 }, "Tonalité", keys, 0));
+    l.add (std::make_unique<AudioParameterChoice> (ParameterID { "key", 1 }, u8 ("Tonalité"), keys, 0));
     l.add (std::make_unique<AudioParameterChoice> (ParameterID { "mode", 1 }, "Mode", modes, 0));
     l.add (std::make_unique<AudioParameterChoice> (ParameterID { "type", 1 }, "Accords", StringArray { "Triades", "7es", "9es" }, 0));
     l.add (std::make_unique<AudioParameterChoice> (ParameterID { "voicing", 1 }, "Voicing",
@@ -27,7 +27,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout PadsProcessor::createLayout(
     l.add (std::make_unique<AudioParameterInt> (ParameterID { "velocity", 1 }, u8 ("Vélocité"), 1, 127, 96));
     l.add (std::make_unique<AudioParameterInt> (ParameterID { "channel", 1 }, "Canal MIDI", 1, 16, 1));
     l.add (std::make_unique<AudioParameterBool> (ParameterID { "bass", 1 }, "Basse", false));
-    l.add (std::make_unique<AudioParameterBool> (ParameterID { "follow", 1 }, "Suivre l'hôte", false));
+    l.add (std::make_unique<AudioParameterBool> (ParameterID { "follow", 1 }, u8 ("Suivre l'hôte"), false));
     l.add (std::make_unique<AudioParameterChoice> (ParameterID { "beats", 1 }, u8 ("Durée d'un accord"),
                                                    StringArray { "2 temps", "1 mesure", "2 mesures" }, 1));
     return l;
@@ -98,15 +98,59 @@ void PadsProcessor::setDegrees (const std::vector<int>& degs)
         v |= (uint64_t) (d - 1) << (4 + 4 * len);
         ++len;
     }
-    if (len == 0)
-        return;
-    v |= (uint64_t) len;
-    packedDegs.store (v);
+    packedDegs.store (v | (uint64_t) len); // len = 0 autorisé (progression vide, mode composer)
 
     juce::String s;
     for (int d : getDegrees())
         s << (s.isEmpty() ? "" : ",") << d;
     apvts.state.setProperty ("degs", s, nullptr);
+}
+
+std::vector<PadsProcessor::UserProg> PadsProcessor::getUserProgs() const
+{
+    std::vector<UserProg> out;
+    for (auto c : apvts.state)
+        if (c.hasType ("UserProg"))
+        {
+            UserProg p;
+            p.name = c.getProperty ("name").toString();
+            for (auto& t : juce::StringArray::fromTokens (c.getProperty ("degs").toString(), ",", ""))
+                p.degs.push_back (t.getIntValue());
+            out.push_back (std::move (p));
+        }
+    return out;
+}
+
+void PadsProcessor::saveUserProg (const juce::String& name, const std::vector<int>& degs)
+{
+    juce::String s;
+    for (int d : degs)
+        s << (s.isEmpty() ? "" : ",") << d;
+
+    for (auto c : apvts.state)
+        if (c.hasType ("UserProg") && c.getProperty ("name").toString() == name)
+        {
+            c.setProperty ("degs", s, nullptr); // une progression du même nom est remplacée
+            return;
+        }
+
+    auto c = juce::ValueTree ("UserProg");
+    c.setProperty ("name", name, nullptr);
+    c.setProperty ("degs", s, nullptr);
+    apvts.state.appendChild (c, nullptr);
+}
+
+void PadsProcessor::deleteUserProg (const juce::String& name)
+{
+    for (int i = 0; i < apvts.state.getNumChildren(); ++i)
+    {
+        auto c = apvts.state.getChild (i);
+        if (c.hasType ("UserProg") && c.getProperty ("name").toString() == name)
+        {
+            apvts.state.removeChild (i, nullptr);
+            return;
+        }
+    }
 }
 
 void PadsProcessor::setPadHeld (int pad, bool down)

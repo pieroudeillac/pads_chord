@@ -21,6 +21,10 @@ private:
     void refreshProgBox();
     void refreshSteps();
     void updateReadout();
+    void appendStep (int pad);  // mode composer : ajoute un pas à la progression
+    void updateButtons();
+    void openSaveDialog();
+    void finishSaveDialog (int result);
 
     PadsProcessor& proc;
     pads::Layout layout;
@@ -32,8 +36,10 @@ private:
     juce::Label lKey, lMode, lType, lVoicing, lOctave, lVelocity, lChannel, lBeats, lProg;
     juce::ComboBox cKey, cMode, cType, cVoicing, cBeats, cProg;
     juce::Slider sOctave, sVelocity, sChannel;
-    juce::ToggleButton tBass, tFollow;
-    juce::TextButton bGenerate { "Générer" };
+    juce::ToggleButton tBass, tFollow, tCompose;
+    juce::TextButton bGenerate { juce::String::fromUTF8 ("Générer") },
+                     bUndo { "Annuler" }, bClear { "Effacer" },
+                     bSave { "Enregistrer" }, bDelete { "Supprimer" };
 
     juce::Label readName, readMeta, readNotes;
     juce::Rectangle<int> padsArea;
@@ -47,6 +53,10 @@ private:
 
     std::vector<pads::Prog> progs;
     std::vector<int> generated;
+    std::vector<int> composed;                      // progression en cours de composition
+    std::vector<PadsProcessor::UserProg> userProgs; // progressions enregistrées par l'utilisateur
+    bool composing = false;
+    std::unique_ptr<juce::AlertWindow> saveWindow;
     std::mt19937 rng { std::random_device {}() };
     int shownPad = 0;
 
