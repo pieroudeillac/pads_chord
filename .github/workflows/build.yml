@@ -1,0 +1,45 @@
+name: Compiler le plugin
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurer
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          else
+            cmake -B build -DCMAKE_BUILD_TYPE=Release
+          fi
+
+      - name: Compiler
+        run: cmake --build build --config Release --parallel
+
+      - name: Tester le moteur de théorie
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Signer en local (macOS, nécessaire sur les Mac Apple Silicon)
+        if: runner.os == 'macOS'
+        run: |
+          for f in build/PadsAccords_artefacts/Release/VST3/*.vst3 build/PadsAccords_artefacts/Release/AU/*.component; do
+            codesign --force --deep -s - "$f"
+          done
+
+      - name: Publier le plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: PadsAccords-${{ runner.os }}
+          path: |
+            build/PadsAccords_artefacts/Release/VST3
+            build/PadsAccords_artefacts/Release/AU
