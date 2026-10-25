@@ -8,9 +8,11 @@ juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str(
 // Les caractères correspondent aux touches telles qu'étiquetées (AZERTY ou QWERTY) :
 // Z X C V -> pads 1–4, A S D F -> 5–8, Q W E R -> 9–12, rangée des chiffres -> 13–16.
 // Sur AZERTY la rangée des chiffres donne &, é, ", ' sans Maj : on accepte aussi ces caractères.
-int padForCharacter (juce_wchar c)
+int padForCharacter (int c)
 {
-    switch (juce::CharacterFunctions::toLowerCase (c))
+    if (c >= 'A' && c <= 'Z')
+        c = c - 'A' + 'a';
+    switch (c)
     {
         case 'z': return 0;
         case 'x': return 1;
@@ -25,7 +27,7 @@ int padForCharacter (juce_wchar c)
         case 'e': return 10;
         case 'r': return 11;
         case '1': case '&': return 12;
-        case '2': case (juce_wchar) 0x00E9: return 13;
+        case '2': case 0x00E9: return 13;
         case '3': case '"': return 14;
         case '4': case '\'': return 15;
         default: return -1;
@@ -59,6 +61,27 @@ int padForKeyCode (int code)
 const char* const padKeys[16]      = { "z", "x", "c", "v", "a", "s", "d", "f",
                                        "q", "w", "e", "r", "1", "2", "3", "4" };
 const char* const padKeysAlt[4]    = { "&", "é", "\"", "'" };
+
+// La touche équivalente est-elle actuellement enfoncée ?
+bool isPadKeyCurrentlyDown (int pad)
+{
+    auto downChar = [] (juce::StringRef desc)
+    {
+        const auto kp = juce::KeyPress::createFromDescription (desc);
+        return kp.isValid() && juce::KeyPress::isKeyCurrentlyDown (kp.getKeyCode());
+    };
+
+    if (downChar (padKeys[pad]))
+        return true;
+    if (pad >= 12)
+    {
+        // '1' à '4' (le code ASCII est le code de touche sur Windows) ou leur caractère AZERTY
+        if (juce::KeyPress::isKeyCurrentlyDown ((int) (unsigned char) padKeys[pad][0])
+            || downChar (juce::String::fromUTF8 (padKeysAlt[pad - 12])))
+            return true;
+    }
+    return false;
+}
 
 const juce::Colour cBg      { 0xff101316 };
 const juce::Colour cPanel   { 0xff171b1f };
@@ -524,10 +547,10 @@ bool PadsEditor::keyPressed (const juce::KeyPress& key)
         return false;
 
     const auto& mods = key.getModifiers();
-    if (mods.isCtrlDown() || mods.isAltDown() || mods.isCommandDown() || mods.isWindowsMenuDown())
+    if (mods.isCtrlDown() || mods.isAltDown() || mods.isCommandDown())
         return false; // on laisse passer les raccourcis
 
-    int pad = padForCharacter (key.getTextCharacter());
+    int pad = padForCharacter ((int) key.getTextCharacter());
     if (pad < 0)
         pad = padForKeyCode (key.getKeyCode());
     if (pad < 0)
@@ -545,9 +568,7 @@ bool PadsEditor::keyStateChanged (bool)
     bool any = false;
     for (int i = 0; i < 16; ++i)
     {
-        bool down = juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::createFromDescription (padKeys[i]));
-        if (i >= 12)
-            down = down || juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::createFromDescription (juce::String::fromUTF8 (padKeysAlt[i - 12])));
+        const bool down = isPadKeyCurrentlyDown (i);
         proc.setPadHeld (i, down);
         any = any || down;
     }
