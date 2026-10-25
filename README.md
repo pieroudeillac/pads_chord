@@ -1,50 +1,80 @@
 # Pads Accords
 
-Plugin VST3 (et AU sur Mac) pour Ableton Live. Une grille 4×4 façon MPC, un accord par pad, avec des progressions
-suggérées selon la tonalité et le mode. Le plugin ne fait pas de son : il envoie des notes MIDI vers l'instrument de ton choix.
+[![Build plugin](https://github.com/pieroudeillac/pads_chord/actions/workflows/build.yml/badge.svg)](https://github.com/pieroudeillac/pads_chord/actions/workflows/build.yml) [![Licence : AGPL v3](https://img.shields.io/badge/licence-AGPL_v3-blue.svg)](LICENSE)
 
-## Obtenir le plugin sans rien installer
+The live-music companion for chord players: a MIDI plugin (VST3, and AU on macOS) built for Ableton Live. A 4×4 MPC-style grid, one chord on each pad, with suggested progressions for every key and mode.
 
-1. Crée un dépôt GitHub (privé si tu veux) et envoie-y ce dossier.
-2. Ouvre l'onglet **Actions**. Le workflow « Compiler le plugin » démarre tout seul (10 à 15 minutes la première fois).
-3. Quand il est vert, ouvre l'exécution et télécharge `PadsAccords-Windows` ou `PadsAccords-macOS` en bas de la page.
+> 🇫🇷 Version française : [README.fr.md](README.fr.md)
 
-## Installer
+**The plugin makes no sound** — it drives the instrument of your choice with MIDI notes.
 
-| Système | Dossier du fichier `Pads Accords.vst3` |
+## Features
+
+- **4×4 pad grid** rebuilt for the selected key (12) and mode (ionian, dorian, natural minor, melodic minor…): tonics, subdominants, dominants, borrowed and colour chords, labelled with roman numerals
+- **Factory progressions** for each mode (pop, jazz ii–V–I, Canon, folk…) plus a **random generator**
+- **Compose your own**: click pads to add chords step by step, save your progressions under a name (stored inside the Live project), delete them anytime
+- **Follow host transport**: play the selected progression in sync with Live — one chord every 2 beats, 1 bar or 2 bars
+- **Voicing options**: octave transposition, smooth register / close position / drop 2 spread, optional root bass
+- General settings: velocity, MIDI channel, triads / 7ths / 9ths mode
+- **Plays nice**: trigger pads with the mouse, a genuine MPC-style controller (notes 36–51), or the computer keyboard
+- **MIDI reset button** to silence everything (All Notes Off) when things get stuck
+
+## Download & install
+
+Grab the latest automatic build from the [Releases](https://github.com/pieroudeillac/pads_chord/releases/latest) page: `PadsAccords-Windows.zip` or `PadsAccords-macOS.zip` (or download `PadsAccords-Windows` / `PadsAccords-macOS` artifacts from the Actions tab).
+
+| System | Unzip and copy the folder `Pads Accords.vst3` to |
 |---|---|
 | Windows | `C:\Program Files\Common Files\VST3` |
-| macOS | `~/Library/Audio/Plug-Ins/VST3` (ou `/Library/Audio/Plug-Ins/VST3`) |
+| macOS | `~/Library/Audio/Plug-Ins/VST3` (or `/Library/Audio/Plug-Ins/VST3` for all users) |
 
-Dans Live : Préférences, onglet **Plug-ins**, active les dossiers de plug-ins VST3 et lance une analyse.
-Sur Mac, si macOS bloque le fichier téléchargé : `xattr -dr com.apple.quarantine "Pads Accords.vst3"`.
+Then in Live: **Preferences → Plug-Ins**, enable VST3 folder scanning, then hit *Rescan*. If macOS blocks the downloaded file: `xattr -dr com.apple.quarantine "Pads Accords.vst3"`.
 
-## Brancher dans Live (Live Lite compris)
+## Using it in Live (works with Live Lite too)
 
-Live ne connaît pas les plug-ins VST « effet MIDI ». Le plugin est donc déclaré comme instrument qui produit du MIDI.
+Live only knows an **instrument** plugin that produces MIDI. So it goes **track A** producing MIDI → feeding an **instrument on track B**:
 
-1. Crée une piste MIDI **A** et glisse **Pads Accords** dessus (rubrique Plug-ins, Instruments).
-2. Crée une piste MIDI **B** avec l'instrument qui doit jouer les accords.
-3. Sur la piste B, dans **MIDI From**, choisis la piste A, puis dans le second menu choisis **Pads Accords**.
-4. Mets **Monitor** sur « In » sur la piste B et arme-la.
+1. Create a MIDI track **A** and drop **Pads Accords** on it (from *Plug-ins → Instruments*).
+2. Create MIDI track **B** with the instrument that should play the chords.
+3. On track B set **MIDI From** = track A, then in the second menu pick **Pads Accords**. Set **Monitor** to *In* and arm the track.
+4. Play: click the pads. On a real pad controller connected to track A, notes 36–51 (C1 to D#2) trigger pads 1 to 16.
 
-Les pads se jouent à la souris. Les notes MIDI 36 à 51 (do1 à ré♯2) déclenchent aussi les pads 1 à 16, donc un vrai pad MPC branché sur la piste A fonctionne.
+**Follow host transport:** tick *Follow host transport* and the selected progression loops in sync with Live — one chord every 2 beats, 1 bar or 2 bars. To capture it, record-arm track B.
 
-**Clavier de l'ordinateur :** cliquez d'abord dans la fenêtre du plugin pour qu'elle ait le focus, puis les touches pilotent les pads du bas vers le haut : `Z X C V` (pads 1–4), `A S D F` (pads 5–8), `Q W E R` (9–12) et la rangée des chiffres `1 2 3 4` (pads 13–16). Une lettre correspond à l'étiquette affichée sur la touche (AZERTY ou QWERTY) ; maintenez la touche pour tenir l'accord, relâchez pour couper. Sur AZERTY, la rangée des chiffres sans Maj (`& é " '`) fonctionne aussi.
+**Compose and save your own progressions:**
 
-**Suivre le transport :** coche « Suivre le transport de l'hôte » et la progression choisie se joue en boucle, un accord toutes les 2 temps, 1 mesure ou 2 mesures, calée sur la position de Live. Pour la capturer, arme la piste B et enregistre.
+- **Compose**: with the switch on, every pad click adds a chord to the progression (up to 8) while playing. Undo removes the last step, Clear starts over; the Progression drop-down shows it as *Composée*.
+- **Save**: name the displayed progression — it is saved inside the Live project and reappears in the **Progression** menu, after the built-in presets. **Delete** only works on a saved progression.
+- **MIDI reset**: instantly silences everything (note-offs + All Notes Off on every channel) and resets the plugin's MIDI state — handy if the synth ends up holding stuck notes.
 
-## Composer et enregistrer une progression
+**Computer keyboard:** click inside the plugin window first so it gets keyboard focus, then the keys drive the pads bottom-up: `Z X C V` (pads 1–4), `A S D F` (5–8), `Q W E R` (9–12), and the number row `1 2 3 4` (13–16). A letter always means the label printed on your key (AZERTY *or* QWERTY); on AZERTY the number row also accepts the unshifted characters `& é " '`. Hold a key to sustain the chord, release to stop.
 
-- Coche **Composer** : chaque pad cliqué ajoute alors un accord à la progression (8 accords au maximum, il s'entend toujours en même temps). **Annuler** retire le dernier pas, **Effacer** repart de zéro.
-- Le menu **Progression** affiche « Composée » pendant la composition. Décoche **Composer** : la progression continue de sonner avec « Suivre le transport de l'hôte ».
-- **Enregistrer** ouvre une boîte pour nommer la progression affichée : elle est sauvegardée dans le projet Live (comme tout l'état du plugin) et réapparaît ensuite dans le menu **Progression**, à la suite des préréglages d'usine. **Supprimer** n'est actif que sur une progression enregistrée.
-- **RàZ MIDI** coupe net tout ce qui sonne (note-off et *All Notes Off* sur chaque canal) et remet à zéro le MIDI du plugin : utile si le synthé garde des notes bloquées, par exemple après un changement de projet ou de routage.
+## Build from source
 
-## Développer
+Prerequisites: **git**, **CMake ≥ 3.22** and a C++17 compiler (MSVC 2019+, Xcode, or gcc/clang). JUCE 8.0.8 is downloaded automatically on first build.
 
-- `Source/ChordEngine.*` : théorie musicale, sans dépendance. `tests/engine_test.cpp` vérifie des cas précis, et `tests/engine_dump.cpp` avec `tests/engine_dump.js` comparent les 324 combinaisons tonalité, mode et type d'accords au prototype web (les deux sorties sont identiques).
-- `Source/PluginProcessor.*` : paramètres, sortie MIDI, suivi du transport.
-- `Source/PluginEditor.*` : interface.
+```sh
+cmake -B build
+cmake --build build --config Release
+```
 
-En local : `cmake -B build && cmake --build build --config Release`. Pour le test du moteur seul : `cmake --build build --target engine_test`.
+Tests (music-theory engine, no JUCE needed):
+
+```sh
+ctest --test-dir build -C Release --output-on-failure
+```
+
+The plugin ends up in `build/PadsAccords_artefacts/Release/` (VST3, and AU on macOS).
+
+## Project layout
+
+| Path | Purpose |
+|---|---|
+| `Source/ChordEngine.*` | Free-standing music theory engine — pure C++, verified against the original web prototype (324 key/mode/type combinations) |
+| `Source/PluginProcessor.*` | Parameters, MIDI output, host transport sync, saved progressions |
+| `Source/PluginEditor.*` | Interface (pads grid, readouts, progressions menu) |
+| `tests/` | Engine unit tests plus a JS/C++ comparison harness versus the prototype |
+
+## Licence
+
+Copyright © 2026 Pierre-Yves R. — released under the [GNU AGPL-3.0](LICENSE). This plugin builds on the [JUCE](https://juce.com/) framework 8, used under the JUCE AGPL v3 license terms.

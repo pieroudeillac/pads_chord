@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -43,3 +46,30 @@ jobs:
           path: |
             build/PadsAccords_artefacts/Release/VST3
             build/PadsAccords_artefacts/Release/AU
+
+  # Quand les deux plateformes sont passées, publie/met à jour la release « latest ».
+  # Les URL des fichiers restent stables : /releases/download/latest/PadsAccords-*.zip
+  release:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Récupérer les artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publier la release « latest »
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          zip -qr "PadsAccords-Windows.zip" "PadsAccords-Windows"
+          zip -qr "PadsAccords-macOS.zip" "PadsAccords-macOS"
+          gh release create latest --prerelease --target main \
+            --title "Dernière compilation (latest)" \
+            --notes "Compilation automatique de « main ». Dézippez et copiez le dossier « Pads Accords.vst3 » dans le dossier VST3 (voir README)." \
+            2>/dev/null || true
+          gh release upload latest "PadsAccords-Windows.zip" "PadsAccords-macOS.zip" --clobber
