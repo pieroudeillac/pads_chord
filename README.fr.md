@@ -8,6 +8,8 @@ Le compagnon des claviéristes qui veulent des accords tout prêts : un plugin M
 
 **Le plugin ne produit aucun son** — il pilote en notes MIDI l'instrument de votre choix.
 
+![Interface de Pads Accords : grille 4×4 d'accords, réglages et menu des progressions](docs/screenshot.png)
+
 ## Fonctionnalités
 
 - **Grille 4×4 de pads** reconstruite pour la tonalité choisie (12) et le mode (ionien, dorien, mineur naturel, mineur mélodique…) : toniques, sous-dominantes, dominantes, emprunts et accords de couleur, étiquetés en chiffrage romain

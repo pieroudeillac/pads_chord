@@ -8,6 +8,8 @@ The live-music companion for chord players: a MIDI plugin (VST3, and AU on macOS
 
 **The plugin makes no sound** — it drives the instrument of your choice with MIDI notes.
 
+![Pads Accords interface: 4×4 chord pads, settings and progression menu](docs/screenshot.png)
+
 ## Features
 
 - **4×4 pad grid** rebuilt for the selected key (12) and mode (ionian, dorian, natural minor, melodic minor…): tonics, subdominants, dominants, borrowed and colour chords, labelled with roman numerals
