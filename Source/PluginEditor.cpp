@@ -396,6 +396,18 @@ void PadsEditor::refreshSteps()
         padButtons[i]->set (layout.pads[i], steps[i]);
 }
 
+void PadsEditor::appendStep (int pad) // mode « Composer » : ajoute un pas à la progression (8 au maximum)
+{
+    auto degs = proc.getDegrees();
+    if (degs.size() >= 8)
+        return;
+    degs.push_back (pad);
+    composed = degs;
+    proc.setDegrees (degs);
+    refreshProgBox();
+    refreshSteps();
+}
+
 void PadsEditor::updateReadout()
 {
     const int idx = proc.getLastPad() - 1;
