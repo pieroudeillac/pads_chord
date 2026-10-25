@@ -2,6 +2,8 @@ name: Compiler le plugin
 
 on:
   push:
+    branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -73,3 +75,29 @@ jobs:
             --notes "Compilation automatique de « main ». Dézippez et copiez le dossier « Pads Accords.vst3 » dans le dossier VST3 (voir README)." \
             2>/dev/null || true
           gh release upload latest "PadsAccords-Windows.zip" "PadsAccords-macOS.zip" --clobber
+
+  # Sur un tag v* (par ex. v1.0.0) : une version numérotée, qui n'est pas écrasée ensuite.
+  release-tag:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Récupérer les artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publier la version numérotée
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          zip -qr "PadsAccords-Windows.zip" "PadsAccords-Windows"
+          zip -qr "PadsAccords-macOS.zip" "PadsAccords-macOS"
+          VERSION="${GITHUB_REF#refs/tags/}"
+          gh release create "$VERSION" --target main \
+            --title "Pads Accords $VERSION" \
+            --notes "Dézippez et copiez le dossier « Pads Accords.vst3 » dans le dossier VST3 (voir README pour la procédure)."
+          gh release upload "$VERSION" "PadsAccords-Windows.zip" "PadsAccords-macOS.zip"

@@ -21,7 +21,12 @@ The live-music companion for chord players: a MIDI plugin (VST3, and AU on macOS
 
 ## Download & install
 
-Grab the latest automatic build from the [Releases](https://github.com/pieroudeillac/pads_chord/releases/latest) page: `PadsAccords-Windows.zip` or `PadsAccords-macOS.zip` (or download `PadsAccords-Windows` / `PadsAccords-macOS` artifacts from the Actions tab).
+Grab a build from the [Releases](https://github.com/pieroudeillac/pads_chord/releases) page:
+
+- **Numbered releases** (e.g. `v1.0.0`) are the stable ones to keep;
+- **`latest`** follows the current development build.
+
+Download `PadsAccords-Windows.zip` or `PadsAccords-macOS.zip` (or grab the `PadsAccords-Windows` / `PadsAccords-macOS` artifacts from the Actions tab).
 
 | System | Unzip and copy the folder `Pads Accords.vst3` to |
 |---|---|
@@ -65,6 +70,13 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 
 The plugin ends up in `build/PadsAccords_artefacts/Release/` (VST3, and AU on macOS).
+
+**Cutting a numbered release:** tag the commit and push the tag — the CI builds and publishes a stable release automatically:
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## Project layout
 

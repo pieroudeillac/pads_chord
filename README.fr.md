@@ -21,7 +21,12 @@ Le compagnon des claviéristes qui veulent des accords tout prêts : un plugin M
 
 ## Téléchargement et installation
 
-Récupérez la dernière compilation automatique depuis la page [Releases](https://github.com/pieroudeillac/pads_chord/releases/latest) : `PadsAccords-Windows.zip` ou `PadsAccords-macOS.zip` (ou les artefacts `PadsAccords-Windows` / `PadsAccords-macOS` de l'onglet Actions).
+Récupérez une compilation sur la page [Releases](https://github.com/pieroudeillac/pads_chord/releases) :
+
+- les **versions numérotées** (par ex. `v1.0.0`) sont les stables à conserver ;
+- la **« latest »** suit la compilation du code courant.
+
+Téléchargez `PadsAccords-Windows.zip` ou `PadsAccords-macOS.zip` (ou les artefacts `PadsAccords-Windows` / `PadsAccords-macOS` de l'onglet Actions).
 
 | Système | Dézippez et copiez le dossier `Pads Accords.vst3` dans |
 |---|---|
@@ -65,6 +70,13 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 
 Le plugin sort dans `build/PadsAccords_artefacts/Release/` (VST3, et AU sur macOS).
+
+**Créer une version numérotée :** posez un tag et poussez-le — la CI compile et publie une version stable automatiquement :
+
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## Organisation du projet
 
