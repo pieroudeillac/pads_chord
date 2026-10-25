@@ -90,7 +90,8 @@ bool isPadKeyCurrentlyDown (int pad)
             || downChar (juce::String::fromUTF8 (padKeysAlt[pad - 12])))
             return true;
         // pavé numérique 1 à 4 (« numpad N » est la description portable de JUCE)
-        if (downChar (juce::String ("numpad ") + (pad - 11)))
+        const auto digit = (char) ('0' + (pad - 11));  // 1..4
+        if (downChar (juce::String ("numpad ") + digit))
             return true;
     }
     return false;
