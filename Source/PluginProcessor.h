@@ -47,6 +47,8 @@ public:
     std::vector<int> getDegrees() const;
     void setDegrees (const std::vector<int>& pads); // numéros de pads, 1 à 16, 8 maximum
 
+    void resetMidi(); // All Notes Off + compteurs internes à zéro (bouton « RàZ MIDI »)
+
     // Progressions enregistrées par l'utilisateur : des enfants UserProg dans l'état du plugin,
     // donc sauvegardées dans le projet Live via getStateInformation.
     struct UserProg { juce::String name; std::vector<int> degs; };
@@ -82,6 +84,7 @@ private:
     std::atomic<int> seqPad { -1 };
     std::atomic<int> lastPad { 0 };
     std::atomic<uint64_t> packedDegs { 0 }; // 4 bits de longueur, puis (pad-1) sur 4 bits par pas
+    std::atomic<bool> panicPending { false };
 
     std::atomic<float>* pVelocity = nullptr;
     std::atomic<float>* pChannel = nullptr;

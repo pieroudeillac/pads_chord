@@ -153,6 +153,12 @@ void PadsProcessor::deleteUserProg (const juce::String& name)
     }
 }
 
+void PadsProcessor::resetMidi()
+{
+    uiMask.store (0);      // plus aucun pad tenu depuis l'interface
+    panicPending.store (true); // le thread audio enverra les note-off et les All Notes Off
+}
+
 void PadsProcessor::setPadHeld (int pad, bool down)
 {
     if (pad < 0 || pad > 15)
@@ -218,6 +224,23 @@ void PadsProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBu
         const juce::SpinLock::ScopedTryLockType sl (snapLock);
         if (sl.isLocked() && shared.version != local.version)
             local = shared;
+    }
+
+    // « RàZ MIDI » : note-off des notes encore tenues, puis All Notes Off sur chaque canal
+    if (panicPending.exchange (false))
+    {
+        for (int n = 0; n < 128; ++n)
+            if (noteRefs[n] > 0)
+            {
+                midi.addEvent (juce::MidiMessage::noteOff (noteChannel[n], n), 0);
+                noteRefs[n] = 0;
+            }
+        std::fill (std::begin (heldCount), std::end (heldCount), (uint8_t) 0);
+        activeMask = 0;
+        midiMask = 0;
+        for (int ch = 1; ch <= 16; ++ch)
+            midi.addEvent (juce::MidiMessage::allNotesOff (ch), 0);
+        soundingMask.store (0);
     }
 
     // Notes reçues : 36 à 51 jouent les pads 1 à 16, comme sur un MPC.

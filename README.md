@@ -30,6 +30,8 @@ Live ne connaît pas les plug-ins VST « effet MIDI ». Le plugin est donc décl
 
 Les pads se jouent à la souris. Les notes MIDI 36 à 51 (do1 à ré♯2) déclenchent aussi les pads 1 à 16, donc un vrai pad MPC branché sur la piste A fonctionne.
 
+**Clavier de l'ordinateur :** cliquez d'abord dans la fenêtre du plugin pour qu'elle ait le focus, puis les touches pilotent les pads du bas vers le haut : `Z X C V` (pads 1–4), `A S D F` (pads 5–8), `Q W E R` (9–12) et la rangée des chiffres `1 2 3 4` (pads 13–16). Une lettre correspond à l'étiquette affichée sur la touche (AZERTY ou QWERTY) ; maintenez la touche pour tenir l'accord, relâchez pour couper. Sur AZERTY, la rangée des chiffres sans Maj (`& é " '`) fonctionne aussi.
+
 **Suivre le transport :** coche « Suivre le transport de l'hôte » et la progression choisie se joue en boucle, un accord toutes les 2 temps, 1 mesure ou 2 mesures, calée sur la position de Live. Pour la capturer, arme la piste B et enregistre.
 
 ## Composer et enregistrer une progression
@@ -37,6 +39,7 @@ Les pads se jouent à la souris. Les notes MIDI 36 à 51 (do1 à ré♯2) décle
 - Coche **Composer** : chaque pad cliqué ajoute alors un accord à la progression (8 accords au maximum, il s'entend toujours en même temps). **Annuler** retire le dernier pas, **Effacer** repart de zéro.
 - Le menu **Progression** affiche « Composée » pendant la composition. Décoche **Composer** : la progression continue de sonner avec « Suivre le transport de l'hôte ».
 - **Enregistrer** ouvre une boîte pour nommer la progression affichée : elle est sauvegardée dans le projet Live (comme tout l'état du plugin) et réapparaît ensuite dans le menu **Progression**, à la suite des préréglages d'usine. **Supprimer** n'est actif que sur une progression enregistrée.
+- **RàZ MIDI** coupe net tout ce qui sonne (note-off et *All Notes Off* sur chaque canal) et remet à zéro le MIDI du plugin : utile si le synthé garde des notes bloquées, par exemple après un changement de projet ou de routage.
 
 ## Développer
 

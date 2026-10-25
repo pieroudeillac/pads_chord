@@ -12,9 +12,12 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    bool keyPressed (const juce::KeyPress&) override;
+    bool keyStateChanged (bool) override;
 
 private:
     class PadButton;
+    class SaveDialog;
 
     void timerCallback() override;
     void relayout();          // recalcule les 16 pads quand tonalité, mode ou type changent
@@ -24,7 +27,7 @@ private:
     void appendStep (int pad);  // mode composer : ajoute un pas à la progression
     void updateButtons();
     void openSaveDialog();
-    void finishSaveDialog (int result);
+    void finishSaveDialog (bool ok);
 
     PadsProcessor& proc;
     pads::Layout layout;
@@ -39,7 +42,8 @@ private:
     juce::ToggleButton tBass, tFollow, tCompose;
     juce::TextButton bGenerate { juce::String::fromUTF8 ("Générer") },
                      bUndo { "Annuler" }, bClear { "Effacer" },
-                     bSave { "Enregistrer" }, bDelete { "Supprimer" };
+                     bSave { "Enregistrer" }, bDelete { "Supprimer" },
+                     bPanic { juce::String::fromUTF8 ("RàZ MIDI") };
 
     juce::Label readName, readMeta, readNotes;
     juce::Rectangle<int> padsArea;
@@ -56,7 +60,7 @@ private:
     std::vector<int> composed;                      // progression en cours de composition
     std::vector<PadsProcessor::UserProg> userProgs; // progressions enregistrées par l'utilisateur
     bool composing = false;
-    std::unique_ptr<juce::AlertWindow> saveWindow;
+    std::unique_ptr<SaveDialog> saveBox;
     std::mt19937 rng { std::random_device {}() };
     int shownPad = 0;
 

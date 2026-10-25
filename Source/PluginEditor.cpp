@@ -4,6 +4,62 @@ namespace
 {
 juce::String u8 (const std::string& s) { return juce::String::fromUTF8 (s.c_str()); }
 
+// Clavier de l'ordinateur : 16 touches = 16 pads, du bas vers le haut.
+// Les caractères correspondent aux touches telles qu'étiquetées (AZERTY ou QWERTY) :
+// Z X C V -> pads 1–4, A S D F -> 5–8, Q W E R -> 9–12, rangée des chiffres -> 13–16.
+// Sur AZERTY la rangée des chiffres donne &, é, ", ' sans Maj : on accepte aussi ces caractères.
+int padForCharacter (juce_wchar c)
+{
+    switch (juce::CharacterFunctions::toLowerCase (c))
+    {
+        case 'z': return 0;
+        case 'x': return 1;
+        case 'c': return 2;
+        case 'v': return 3;
+        case 'a': return 4;
+        case 's': return 5;
+        case 'd': return 6;
+        case 'f': return 7;
+        case 'q': return 8;
+        case 'w': return 9;
+        case 'e': return 10;
+        case 'r': return 11;
+        case '1': case '&': return 12;
+        case '2': case (juce_wchar) 0x00E9: return 13;
+        case '3': case '"': return 14;
+        case '4': case '\'': return 15;
+        default: return -1;
+    }
+}
+
+int padForKeyCode (int code)
+{
+    switch (code)
+    {
+        case 'z': case 'Z': return 0;
+        case 'x': case 'X': return 1;
+        case 'c': case 'C': return 2;
+        case 'v': case 'V': return 3;
+        case 'a': case 'A': return 4;
+        case 's': case 'S': return 5;
+        case 'd': case 'D': return 6;
+        case 'f': case 'F': return 7;
+        case 'q': case 'Q': return 8;
+        case 'w': case 'W': return 9;
+        case 'e': case 'E': return 10;
+        case 'r': case 'R': return 11;
+        case '1': return 12;
+        case '2': return 13;
+        case '3': return 14;
+        case '4': return 15;
+        default: return -1;
+    }
+}
+
+const char* const padKeys[16]      = { "z", "x", "c", "v", "a", "s", "d", "f",
+                                       "q", "w", "e", "r", "1", "2", "3", "4" };
+const char* const padKeysAlt[4]    = { "&", "é", "\"", "'" };
+
 const juce::Colour cBg      { 0xff101316 };
 const juce::Colour cPanel   { 0xff171b1f };
 const juce::Colour cPad     { 0xff262c32 };
@@ -106,6 +162,89 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Boîte « Enregistrer la progression » : dessinée dans la fenêtre du plugin.
+// Pas de fenêtre modale de l'hôte : dans Ableton elle déforme la saisie clavier.
+class PadsEditor::SaveDialog final : public juce::Component
+{
+public:
+    SaveDialog (PadsEditor& e, const juce::String& defaultName) : ed (e)
+    {
+        title.setText (juce::String::fromUTF8 ("Enregistrer la progression"), juce::dontSendNotification);
+        title.setFont (juce::FontOptions (17.0f, juce::Font::bold));
+        title.setColour (juce::Label::textColourId, cInk);
+        prompt.setText (juce::String::fromUTF8 ("Nom de la progression :"), juce::dontSendNotification);
+        prompt.setFont (juce::FontOptions (12.5f));
+        prompt.setColour (juce::Label::textColourId, cInk2);
+
+        nameBox.setText (defaultName, false);
+        nameBox.setSelectAllWhenFocused (true);
+        nameBox.setIndents (6, 4);
+        nameBox.setReturnKeyStartsNewLine (false);
+        nameBox.setEscapeAndReturnKeysConsumed (false);
+        nameBox.onReturnKey = [this] { ed.finishSaveDialog (true); };
+
+        ok.setButtonText ("OK");
+        cancel.setButtonText (juce::String::fromUTF8 ("Annuler"));
+        ok.onClick = [this] { ed.finishSaveDialog (true); };
+        cancel.onClick = [this] { ed.finishSaveDialog (false); };
+
+        addAndMakeVisible (title);
+        addAndMakeVisible (prompt);
+        addAndMakeVisible (nameBox);
+        addAndMakeVisible (ok);
+        addAndMakeVisible (cancel);
+    }
+
+    void focusName() { nameBox.grabKeyboardFocus(); }
+    juce::String name() const { return nameBox.getText(); }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (juce::Colours::black.withAlpha (0.55f));
+        auto p = panel().toFloat();
+        g.setColour (cPanel);
+        g.fillRoundedRectangle (p, 10.0f);
+        g.setColour (cLine);
+        g.drawRoundedRectangle (p, 10.0f, 1.0f);
+    }
+
+    void resized() override
+    {
+        auto box = panel().reduced (14);
+        title.setBounds (box.removeFromTop (26));
+        prompt.setBounds (box.removeFromTop (18));
+        nameBox.setBounds (box.removeFromTop (30));
+        box.removeFromTop (10);
+        auto row = box.removeFromTop (28);
+        cancel.setBounds (row.removeFromLeft (120));
+        row.removeFromLeft (8);
+        ok.setBounds (row.removeFromLeft (80));
+    }
+
+    bool keyPressed (const juce::KeyPress& k) override
+    {
+        if (k.isKeyCode (juce::KeyPress::escapeKey)) { ed.finishSaveDialog (false); return true; }
+        if (k.isKeyCode (juce::KeyPress::returnKey)) { ed.finishSaveDialog (true); return true; }
+        return false;
+    }
+
+private:
+    juce::Rectangle<int> panel() const
+    {
+        const auto area = getLocalBounds();
+        const int w = juce::jlimit (300, 460, area.getWidth() * 3 / 5);
+        return juce::Rectangle<int> (area.getCentreX() - w / 2, area.getCentreY() - 70, w, 140);
+    }
+
+    PadsEditor& ed;
+    juce::Label title, prompt;
+    juce::TextEditor nameBox;
+    juce::TextButton ok, cancel;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SaveDialog)
+};
+
+// ---------------------------------------------------------------------------
 PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
 {
     for (int i = 0; i < 16; ++i)
@@ -167,6 +306,7 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
     addAndMakeVisible (bGenerate);
     addAndMakeVisible (bSave);
     addAndMakeVisible (bDelete);
+    addAndMakeVisible (bPanic);
 
     aKey = std::make_unique<CA> (proc.apvts, "key", cKey);
     aMode = std::make_unique<CA> (proc.apvts, "mode", cMode);
@@ -229,6 +369,7 @@ PadsEditor::PadsEditor (PadsProcessor& p) : AudioProcessorEditor (&p), proc (p)
         refreshSteps();
     };
     bSave.onClick = [this] { openSaveDialog(); };
+    bPanic.onClick = [this] { proc.resetMidi(); };
     bDelete.onClick = [this]
     {
         const int id = cProg.getSelectedId();
@@ -344,9 +485,11 @@ void PadsEditor::updateButtons()
 
 void PadsEditor::openSaveDialog()
 {
-    const auto current = proc.getDegrees();
-    if (current.empty() || saveWindow != nullptr)
+    if (saveBox != nullptr || proc.getDegrees().empty())
         return;
+
+    for (int i = 0; i < 16; ++i) // on repose tout pour repartir sur un état propre
+        proc.setPadHeld (i, false);
 
     juce::StringArray taken;
     for (const auto& up : userProgs)
@@ -355,32 +498,60 @@ void PadsEditor::openSaveDialog()
     while (taken.contains (juce::String::fromUTF8 ("Ma progression ") + juce::String (n)))
         ++n;
 
-    saveWindow = std::make_unique<juce::AlertWindow> (juce::String::fromUTF8 ("Enregistrer la progression"),
-                                                      juce::String::fromUTF8 ("Nom de la progression :"),
-                                                      juce::MessageBoxIconType::NoIcon, this);
-    saveWindow->addTextEditor ("name", juce::String::fromUTF8 ("Ma progression ") + juce::String (n), juce::String::fromUTF8 ("Nom"), true);
-    saveWindow->addButton ("OK", 1, juce::KeyPress (juce::KeyPress::returnKey));
-    saveWindow->addButton (juce::String::fromUTF8 ("Annuler"), 0, juce::KeyPress (juce::KeyPress::escapeKey));
-    saveWindow->enterModalState (true, juce::ModalCallbackFunction::create ([safe = juce::Component::SafePointer<PadsEditor> (this)] (int result)
-    {
-        if (auto* e = safe.getComponent()) // l'éditeur peut être fermé pendant le dialogue
-            e->finishSaveDialog (result);
-    }), false);
+    saveBox = std::make_unique<SaveDialog> (*this, juce::String::fromUTF8 ("Ma progression ") + juce::String (n));
+    addAndMakeVisible (*saveBox);
+    saveBox->setBounds (getLocalBounds());
+    saveBox->toFront (true);
+    saveBox->focusName();
 }
 
-void PadsEditor::finishSaveDialog (int result)
+void PadsEditor::finishSaveDialog (bool ok)
 {
-    if (auto w = std::move (saveWindow))
-        if (result == 1 && ! proc.getDegrees().empty())
-        {
-            const auto name = w->getTextEditorContents ("name").trim();
-            if (name.isNotEmpty())
-            {
-                proc.saveUserProg (name, proc.getDegrees());
-                refreshProgBox();
-                refreshSteps();
-            }
-        }
+    const auto name = saveBox != nullptr ? saveBox->name() : juce::String();
+    saveBox.reset();
+
+    if (ok && name.isNotEmpty() && ! proc.getDegrees().empty())
+    {
+        proc.saveUserProg (name, proc.getDegrees());
+        refreshProgBox();
+        refreshSteps();
+    }
+}
+
+bool PadsEditor::keyPressed (const juce::KeyPress& key)
+{
+    if (saveBox != nullptr) // la frappe du nom ne doit pas déclencher les pads
+        return false;
+
+    const auto& mods = key.getModifiers();
+    if (mods.isCtrlDown() || mods.isAltDown() || mods.isCommandDown() || mods.isWindowsMenuDown())
+        return false; // on laisse passer les raccourcis
+
+    int pad = padForCharacter (key.getTextCharacter());
+    if (pad < 0)
+        pad = padForKeyCode (key.getKeyCode());
+    if (pad < 0)
+        return false;
+
+    proc.setPadHeld (pad, true);
+    return true;
+}
+
+bool PadsEditor::keyStateChanged (bool)
+{
+    if (saveBox != nullptr)
+        return false;
+
+    bool any = false;
+    for (int i = 0; i < 16; ++i)
+    {
+        bool down = juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::createFromDescription (padKeys[i]));
+        if (i >= 12)
+            down = down || juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::createFromDescription (juce::String::fromUTF8 (padKeysAlt[i - 12])));
+        proc.setPadHeld (i, down);
+        any = any || down;
+    }
+    return any;
 }
 
 void PadsEditor::refreshSteps()
@@ -534,10 +705,16 @@ void PadsEditor::resized()
     row3.removeFromLeft (6);
     bClear.setBounds (row3);
     area.removeFromTop (6);
+    const int w4 = (area.getWidth() - 18) / 4;
     row3 = area.removeFromTop (rowH);
-    bSave.setBounds (row3.removeFromLeft (w3));
+    bSave.setBounds (row3.removeFromLeft (w4));
     row3.removeFromLeft (6);
-    bDelete.setBounds (row3.removeFromLeft (w3));
+    bDelete.setBounds (row3.removeFromLeft (w4));
     row3.removeFromLeft (6);
-    bGenerate.setBounds (row3);
+    bGenerate.setBounds (row3.removeFromLeft (w4));
+    row3.removeFromLeft (6);
+    bPanic.setBounds (row3);
+
+    if (saveBox != nullptr)
+        saveBox->setBounds (getLocalBounds());
 }
